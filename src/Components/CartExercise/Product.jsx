@@ -1,14 +1,24 @@
 import React from 'react';
-import Products from './Products';
+import { useContext } from 'react';
+import { CartContext } from './CartContext';
 
-export default function Product() {
+export default function Product(props) {
+  const { product } = props;
+  const { addToCart } = useContext(CartContext);
+  const handleClick = () => {
+    addToCart(product);
+  };
   return (
     <div className='component'>
-      <h1>{props.post.category}</h1>
-      <img src='' alt='' style={{ width: '100%', height: '300px' }} />
-      <h2>Price: $0</h2>
-      <p>description</p>
-      <button>Add to cart</button>
+      <h1>{product.title}</h1>
+      <img
+        src={product.image}
+        alt=''
+        style={{ width: '100%', height: '300px' }}
+      />
+      <h2>Price: ${product.price}</h2>
+      <p>{product.description}</p>
+      <button onClick={handleClick}>Add to cart</button>
     </div>
   );
 }
