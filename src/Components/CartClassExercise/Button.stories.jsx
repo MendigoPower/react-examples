@@ -6,10 +6,8 @@ export default {
   title: 'Cart-Exercise/Product/Button',
   component: Button,
   // More on argTypes: https://storybook.js.org/docs/react/api/argtypes
-  parameters: {
-    actions: {
-      handles: ['mouseover', 'click .btn'],
-    },
+  argTypes: {
+    backgroundColor: { control: 'color' },
   },
 };
 
