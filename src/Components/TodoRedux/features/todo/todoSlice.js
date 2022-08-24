@@ -14,6 +14,18 @@ export const fetchTodos = createAsyncThunk(
   }
 );
 
+export const fetchTodosFromFirebase = createAsyncThunk(
+  'todo/fetchTodosFromFirebase',
+  async () => {
+    try {
+      const data = await todoService.getFromFirebase();
+      return data;
+    } catch (e) {
+      console.log('error', e);
+    }
+  }
+)
+
 export const todoSlice = createSlice({
   name: 'todo',
   initialState: {
@@ -39,11 +51,26 @@ export const todoSlice = createSlice({
         state.list = action.payload;
         state.isLoading = false;
       })
+      .addCase(fetchTodosFromFirebase.fulfilled, (state, action) => {
+        if (action.payload.message) {
+          state.message = action.payload.message;
+        }
+        state.list = action.payload;
+        state.isLoading = false;
+      })
       .addCase(fetchTodos.pending, (state, action) => {
         state.list = action.payload;
         state.isLoading = true;
       })
+      .addCase(fetchTodosFromFirebase.pending, (state, action) => {
+        state.list = action.payload;
+        state.isLoading = true;
+      })
       .addCase(fetchTodos.rejected, (state, action) => {
+        state.isLoading = false;
+        state.isError = true;
+      })
+      .addCase(fetchTodosFromFirebase.rejected, (state, action) => {
         state.isLoading = false;
         state.isError = true;
       });
