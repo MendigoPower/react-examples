@@ -1,30 +1,47 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import todoService from './todoService';
 
-export const fetchTodos = createAsyncThunk(
-  'todo/fetchTodos',
-  async (thunkAPI) => {
+export const fetchTodos = createAsyncThunk('todo/fetchTodos', async () => {
+  try {
+    const response = await todoService.get();
+    return response.data;
+  } catch (error) {
+    console.log(error);
+    return error;
+  }
+});
+
+export const addToFirebase = createAsyncThunk(
+  'todo/addToFirebase',
+  async (task) => {
     try {
-      const response = await todoService.get();
-      return response.data;
-    } catch (error) {
-      console.log(error);
-      return error;
+      return await todoService.addToFirebase(task);
+    } catch (e) {
+      return e.message;
     }
   }
 );
 
 export const fetchTodosFromFirebase = createAsyncThunk(
   'todo/fetchTodosFromFirebase',
-  async () => {
+  async (userId) => {
     try {
-      const data = await todoService.getFromFirebase();
-      return data;
-    } catch (e) {
-      console.log('error', e);
+      console.log('action', userId);
+      const response = await todoService.getFromFirebase(userId);
+      return response.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
+    } catch (error) {
+      console.log(error.message);
+      return error;
     }
   }
-)
+);
+
+export const removeFromFirebase = createAsyncThunk(
+  'todo/removeFromFirebase',
+  async (id) => {
+    return await todoService.removeFromFirebase(id);
+  }
+);
 
 export const todoSlice = createSlice({
   name: 'todo',
@@ -36,7 +53,7 @@ export const todoSlice = createSlice({
   },
   reducers: {
     add: (state, action) => {
-      state.list.push(action.payload);
+      state.list = [action.payload, ...state.list];
     },
     remove: (state, action) => {
       state.list = state.list.filter((task) => task.id !== action.payload);
@@ -51,18 +68,7 @@ export const todoSlice = createSlice({
         state.list = action.payload;
         state.isLoading = false;
       })
-      .addCase(fetchTodosFromFirebase.fulfilled, (state, action) => {
-        if (action.payload.message) {
-          state.message = action.payload.message;
-        }
-        state.list = action.payload;
-        state.isLoading = false;
-      })
       .addCase(fetchTodos.pending, (state, action) => {
-        state.list = action.payload;
-        state.isLoading = true;
-      })
-      .addCase(fetchTodosFromFirebase.pending, (state, action) => {
         state.list = action.payload;
         state.isLoading = true;
       })
@@ -70,9 +76,20 @@ export const todoSlice = createSlice({
         state.isLoading = false;
         state.isError = true;
       })
-      .addCase(fetchTodosFromFirebase.rejected, (state, action) => {
+      .addCase(fetchTodosFromFirebase.fulfilled, (state, action) => {
+        if (action.payload.message) {
+          state.message = action.payload.message;
+        }
+        state.list = action.payload;
         state.isLoading = false;
-        state.isError = true;
+      })
+      .addCase(addToFirebase.fulfilled, (state, action) => {
+        state.list = [action.payload, ...state.list];
+        state.isLoading = false;
+      })
+      .addCase(removeFromFirebase.fulfilled, (state, action) => {
+        state.list = state.list.filter((task) => task.id !== action.payload);
+        state.isLoading = false;
       });
   },
 });
