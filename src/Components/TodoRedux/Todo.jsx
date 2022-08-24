@@ -1,24 +1,36 @@
 import React, { useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { add, remove, fetchTodos } from './features/todo/todoSlice';
+import {
+  fetchTodosFromFirebase,
+  addToFirebase,
+  removeFromFirebase,
+} from './features/todo/todoSlice';
+import { signOut } from './features/user/userSlice';
+import SignIn from './SignIn';
+import SignUp from './SignUp';
 // import { actions } from './features/todo/todoSlice';
 export default function Todo() {
   const { list, isLoading, isError, message } = useSelector(
     (state) => state.todo
   );
+  const userId = useSelector((state) => state.user.info.id);
+  console.log('userId component', userId);
   const dispatch = useDispatch();
   const inputRef = useRef();
+
   const handleSubmit = (event) => {
     event.preventDefault();
     const newTask = {
       id: list.length + 1,
       title: inputRef.current.value,
+      userId,
     };
-    dispatch(add(newTask));
+    dispatch(addToFirebase(newTask));
   };
+
   useEffect(() => {
-    dispatch(fetchTodos());
-  }, [dispatch]);
+    dispatch(fetchTodosFromFirebase(userId));
+  }, [dispatch, userId]);
   if (isLoading) {
     return <h2>Loading...</h2>;
   }
@@ -29,9 +41,11 @@ export default function Todo() {
   if (isError) {
     return <h2>Failed to load data!</h2>;
   }
+
   return (
     <div>
       <h1>Todo List</h1>
+      <button onClick={() => dispatch(signOut())}>Sign Out</button>
       <form onSubmit={handleSubmit}>
         <label htmlFor='taskInput'>New Task:</label>
         <input type='text' ref={inputRef} />
@@ -40,7 +54,9 @@ export default function Todo() {
       <ul>
         {list.map((task) => (
           <li key={task.id}>
-            <button onClick={() => dispatch(remove(task.id))}>X</button>
+            <button onClick={() => dispatch(removeFromFirebase(task.id))}>
+              X
+            </button>
             {task.title}
           </li>
         ))}
